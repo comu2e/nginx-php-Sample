@@ -1,0 +1,33 @@
+# 検証用のdocker-compose 
+version: '3'
+services:
+  nginx:
+    container_name: nginx
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    ports:
+      - 80:80
+    volumes:
+      - .:/app
+    depends_on:
+      - app
+
+  app:
+    container_name: app
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+
+    environment:
+      LANG: 'ja_JP.UTF-8'
+      TZ: 'Asia/Tokyo'
+
+    volumes:
+      - .:/app
+    expose:
+      - 9000
+
+networks:
+  default:
+    name: app-sample
