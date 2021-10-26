@@ -94,7 +94,7 @@ jobs:
         task-definition: .aws/task-definition.json          
         container-name: nginx
          # Repository名はプロジェクトごとで一意にしておく
-        image: ${{ secrets.AWS_ACCOUNT_ID}}.dkr.ecr.${{env.AWS_DEFAULT_REGION}}.amazonaws.com/nginx:${{env.IMAGE_TAG}}
+        image: ${{ secrets.AWS_ACCOUNT_ID}}.dkr.ecr.${{env.AWS_DEFAULT_REGION}}.amazonaws.com/nginx
 
     - name: Render Amazon ECS task definition with APP container
       id: render-app-container
@@ -103,8 +103,7 @@ jobs:
         task-definition: ${{ steps.render-nginx-container.outputs.task-definition }}
         container-name: app
         # Repository名はプロジェクトごとで一意にしておく
-        image: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{env.AWS_DEFAULT_REGION}}.amazonaws.com/app:${{env.IMAGE_TAG}}
-
+        image: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{env.AWS_DEFAULT_REGION}}.amazonaws.com/app
     - name: Deploy Amazon ECS task definition
       uses: aws-actions/amazon-ecs-deploy-task-definition@v1
       with:
