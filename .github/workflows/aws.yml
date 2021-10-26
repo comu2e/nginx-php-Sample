@@ -31,7 +31,7 @@ on:
     branches:
       - master
 env:
-  APP_NAME: Fagate_Demo
+  APP_NAME: FagateDemo
   REGION:   ap-northeast-1
 jobs:
   deploy:
