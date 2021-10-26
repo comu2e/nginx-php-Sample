@@ -76,7 +76,7 @@ jobs:
     # Rewrite task-definition
     - name: rewrite task-definition
       run: sed -i -e s/SED_TARGET_AWS_ACCOUNT_ID/${{ secrets.AWS_ACCOUNT_ID }}/g .aws/ecs/migration-task-definition.json &&
-          sed -i -e s/SED_TARGET_AWS_ACCOUNT_ID/${{ secrets.AWS_ACCOUNT_ID }}/g .aws/ecs/task-definition.json &&
+          sed -i -e s/SED_TARGET_AWS_ACCOUNT_ID/${{ secrets.AWS_ACCOUNT_ID }}/g .aws/ecs/task-definition.json
       # # Migration
       # - name: migration task def
       #   id: migration-task-def
