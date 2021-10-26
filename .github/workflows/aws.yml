@@ -78,7 +78,8 @@ jobs:
       run: sed -i -e s/SED_APP_NAME/${{ env.APP_NAME }}/g .aws/task-definition.json &&
           sed -i -e s/SED_AWS_ACCOUNT_ID/${{ secrets.AWS_ACCOUNT_ID }}/g .aws/task-definition.json &&
           sed -i -e s/SED_REGION/${{ env.AWS_DEFAULT_REGION }}/g .aws/task-definition.json &&
-          sed -i -e s/SED_IMAGE_TAG/${{env.IMAGE_TAG}}/g .aws/task-definition.json
+          sed -i -e s/SED_IMAGE_TAG/${{env.IMAGE_TAG}}/g .aws/task-definition.json &&
+          cat .aws/task-definition.json 
       # # Migration
       # - name: migration task def
       #   id: migration-task-def
