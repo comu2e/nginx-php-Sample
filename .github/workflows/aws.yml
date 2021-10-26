@@ -76,7 +76,7 @@ jobs:
     # Rewrite task-definition
     - name: rewrite task-definition
       run: sed -i -e s/SED_TARGET_AWS_ACCOUNT_ID/${{ secrets.AWS_ACCOUNT_ID }}/g .aws/task-definition.json &&
-      sed -i -e s/SED_REGION/${{env.REGION}}/g .aws/task-definition.json
+        sed -i -e s/SED_REGION/${{env.REGION}}/g .aws/task-definition.json
       # # Migration
       # - name: migration task def
       #   id: migration-task-def
@@ -94,7 +94,7 @@ jobs:
         container-name: nginx
          # Repository名はプロジェクトごとで一意にしておく
         image: ${{ secrets.AWS_ACCOUNT_ID}}.dkr.${{env.REGION}}.amazonaws.com/nginx:latest
-        
+
     - name: Modify Amazon ECS task definition with second container
       id: render-app-container
       uses: aws-actions/amazon-ecs-render-task-definition@v1
