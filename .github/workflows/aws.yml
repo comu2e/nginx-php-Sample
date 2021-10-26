@@ -83,28 +83,28 @@ jobs:
       #     cluster: ${{env.APP_NAME}}
 
       # Deploy
-      - name: Render Amazon ECS task definition for first container
-        id: render-web-container
-        uses: aws-actions/amazon-ecs-render-task-definition@v1
-        with:
-          task-definition: .aws/task-definition.json
-          container-name: nginx
+    - name: Render Amazon ECS task definition for first container
+      id: render-web-container
+      uses: aws-actions/amazon-ecs-render-task-definition@v1
+      with:
+        task-definition: .aws/task-definition.json          
+        container-name: nginx
          # Repository名はプロジェクトごとで一意にしておく
-          image: ${{ secrets.AWS_ACCOUNT_ID}}.dkr.${{env.REGION}}.amazonaws.com/nginx:latest
+        image: ${{ secrets.AWS_ACCOUNT_ID}}.dkr.${{env.REGION}}.amazonaws.com/nginx:latest
 
-      - name: Modify Amazon ECS task definition with second container
-        id: render-app-container
-        uses: aws-actions/amazon-ecs-render-task-definition@v1
-        with:
-          task-definition: ${{ steps.render-web-container.outputs.task-definition }}
-          container-name: app
-          # Repository名はプロジェクトごとで一意にしておく
-          image: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{env.REGION}}.amazonaws.com/app:latest
+    - name: Modify Amazon ECS task definition with second container
+      id: render-app-container
+      uses: aws-actions/amazon-ecs-render-task-definition@v1
+      with:
+        task-definition: ${{ steps.render-web-container.outputs.task-definition }}
+        container-name: app
+        # Repository名はプロジェクトごとで一意にしておく
+        image: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{env.REGION}}.amazonaws.com/app:latest
 
-      - name: Deploy Amazon ECS task definition
-        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
-        with:
-          task-definition: ${{ steps.render-app-container.outputs.task-definition }}
-          service: ${{env.APP_NAME}}
-          cluster: ${{env.APP_NAME}}
-          wait-for-service-stability: true
+    - name: Deploy Amazon ECS task definition
+      uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+      with:
+        task-definition: ${{ steps.render-app-container.outputs.task-definition }}
+        service: ${{env.APP_NAME}}
+        cluster: ${{env.APP_NAME}}
+        wait-for-service-stability: true
