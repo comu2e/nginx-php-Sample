@@ -30,16 +30,9 @@ on:
   push:
     branches:
       - master
-# env:
-#   AWS_REGION: secrets.MY_AWS_REGION                   # set this to your preferred AWS region, e.g. us-west-1
-#   ECR_REPOSITORY: secrets.MY_ECR_REPOSITORY           # set this to your Amazon ECR repository name
-#   ECS_SERVICE: secrets.MY_ECS_SERVICE                 # set this to your Amazon ECS service name
-#   ECS_CLUSTER: secrets.MY_ECS_CLUSTER                 # set this to your Amazon ECS cluster name
-#   ECS_TASK_DEFINITION: secrets.MY_ECS_TASK_DEFINITION # set this to the path to your Amazon ECS task definition
-#                                                # file, e.g. .aws/task-definition.json
-#   CONTAINER_NAME: secrets.MY_CONTAINER_NAME           # set this to the name of the container in the
-#                                                # containerDefinitions section of your task definition
-
+env:
+  APP_NAME: Fagate_Demo
+  REGION:   ap-northeast-1
 jobs:
   deploy:
     name: Deploy
@@ -54,8 +47,9 @@ jobs:
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ap-northeast-1
-          
+        aws-region: ${{env.REGION}}
+      env:
+        APP_NAME : "SAMPLE_app"      
     - name: Login to Amazon ECR
       id: login-ecr
       uses: aws-actions/amazon-ecr-login@v1
@@ -64,27 +58,51 @@ jobs:
       id: build-image
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        ECR_REPOSITORY_NGINX: ${{env.APP_NAME}-nginx
+        ECR_REPOSITORY_APP: ${{env.APP_NAME}}-app
         IMAGE_TAG: ${{ github.sha }}
       run: |
-        # Build a docker container and
-        # push it to ECR so that it can
-        # be deployed to ECS.
-        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
-        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-        echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY_NGINX:$IMAGE_TAG -f .docker/nginx/Dockerfile ./
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY_NGINX:$IMAGE_TAG
+          echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY_NGINX:$IMAGE_TAG"
 
-    - name: Fill in the new image ID in the Amazon ECS task definition
-      id: task-def
-      uses: aws-actions/amazon-ecs-render-task-definition@v1
-      with:
-        task-definition: ${{ env.ECS_TASK_DEFINITION }}
-        container-name: ${{ env.CONTAINER_NAME }}
-        image: ${{ steps.build-image.outputs.image }}
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY_APP:$IMAGE_TAG -f .docker/app/Dockerfile ./
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY_APP:$IMAGE_TAG
+          echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY_APP:$IMAGE_TAG"
 
-    - name: Deploy Amazon ECS task definition
-      uses: aws-actions/amazon-ecs-deploy-task-definition@v1
-      with:
-        task-definition: ${{ steps.task-def.outputs.task-definition }}
-        service: ${{ env.ECS_SERVICE }}
-        cluster: ${{ env.ECS_CLUSTER }}
-        wait-for-service-stability: true
+    # Rewrite task-definition
+    - name: rewrite task-definition
+      run: sed -i -e s/SED_TARGET_AWS_ACCOUNT_ID/${{ secrets.AWS_ACCOUNT_ID }}/g .aws/ecs/migration-task-definition.json &&
+          sed -i -e s/SED_TARGET_AWS_ACCOUNT_ID/${{ secrets.AWS_ACCOUNT_ID }}/g .aws/ecs/task-definition.json &&
+      # # Migration
+      # - name: migration task def
+      #   id: migration-task-def
+      #   uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+      #   with:
+      #     task-definition: .aws/ecs/migration-task-definition.json
+      #     cluster: ${{env.APP_NAME}}
+
+      # Deploy
+      - name: Render Amazon ECS task definition for first container
+        id: render-web-container
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: .aws/task-definition.json
+          container-name: nginx
+          image: ${{ secrets.AWS_ACCOUNT_ID}}.dkr.${{env.REGION}}.amazonaws.com/${{env.APP_NAME}}-nginx:latest
+
+      - name: Modify Amazon ECS task definition with second container
+        id: render-app-container
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: ${{ steps.render-web-container.outputs.task-definition }}
+          container-name: app
+          image: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{env.REGION}}.amazonaws.com/${{env.APP_NAME}}-app:latest
+
+      - name: Deploy Amazon ECS task definition
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: ${{ steps.render-app-container.outputs.task-definition }}
+          service: ${{env.APP_NAME}}
+          cluster: ${{env.APP_NAME}}
+          wait-for-service-stability: true
