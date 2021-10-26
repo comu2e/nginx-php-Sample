@@ -80,7 +80,7 @@ jobs:
       run: sed -i -e s/SED_APP_NAME/${{ env.APP_NAME }}/g .aws/task-definition.json &&
           sed -i -e s/SED_AWS_ACCOUNT_ID/${{ secrets.AWS_ACCOUNT_ID }}/g .aws/task-definition.json &&
           sed -i -e s/SED_REGION/${{ env.AWS_DEFAULT_REGION }}/g .aws/task-definition.json &&
-          sed -i -e s/SED_IMAGE_TAG/$IMAGE_TAG/g .aws/task-definition.json
+          sed -i -e s/SED_IMAGE_TAG/${{steps.build-image.outputs.IMAGE_TAG}}/g .aws/task-definition.json
       # # Migration
       # - name: migration task def
       #   id: migration-task-def
@@ -97,7 +97,7 @@ jobs:
         task-definition: .aws/task-definition.json          
         container-name: nginx
          # Repository名はプロジェクトごとで一意にしておく
-        image: ${{ secrets.AWS_ACCOUNT_ID}}.dkr.${{env.AWS_DEFAULT_REGION}}.amazonaws.com/nginx:$IMAGE_TAG
+        image: ${{ secrets.AWS_ACCOUNT_ID}}.dkr.${{env.AWS_DEFAULT_REGION}}.amazonaws.com/nginx:${{steps.build-image.outputs.IMAGE_TAG}}
 
     - name: Render Amazon ECS task definition with APP container
       id: render-app-container
@@ -106,7 +106,7 @@ jobs:
         task-definition: ${{ steps.render-nginx-container.outputs.task-definition }}
         container-name: app
         # Repository名はプロジェクトごとで一意にしておく
-        image: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{env.AWS_DEFAULT_REGION}}.amazonaws.com/app:$IMAGE_TAG
+        image: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{env.AWS_DEFAULT_REGION}}.amazonaws.com/app:${{steps.build-image.outputs.IMAGE_TAG}}
 
     - name: Deploy Amazon ECS task definition
       uses: aws-actions/amazon-ecs-deploy-task-definition@v1
