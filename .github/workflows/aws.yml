@@ -33,7 +33,6 @@ on:
 env:
 # アプリケーションとAWS上の環境の名前はAPP_NAMEで共有しているのでここは揃える。
   APP_NAME: FargateDemo
-  REGION:   ap-northeast-1
   IMAGE_TAG:  ${{ github.sha }}
 jobs:
   deploy:
@@ -49,7 +48,7 @@ jobs:
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{env.REGION}}
+        aws-region: ${{env.AWS_DEFAULT_REGION}}
     - name: Login to Amazon ECR
       id: login-ecr
       uses: aws-actions/amazon-ecr-login@v1
@@ -95,7 +94,7 @@ jobs:
         task-definition: .aws/task-definition.json          
         container-name: nginx
          # Repository名はプロジェクトごとで一意にしておく
-        image: ${{ secrets.AWS_ACCOUNT_ID}}.dkr.${{env.AWS_DEFAULT_REGION}}.amazonaws.com/nginx:${{env.IMAGE_TAG}}
+        image: ${{ secrets.AWS_ACCOUNT_ID}}.dkr.ecr.${{env.AWS_DEFAULT_REGION}}.amazonaws.com/nginx:${{env.IMAGE_TAG}}
 
     - name: Render Amazon ECS task definition with APP container
       id: render-app-container
