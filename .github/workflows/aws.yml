@@ -61,7 +61,8 @@ jobs:
         # プロジェクトごとに分けておいたほうがいい
         ECR_REPOSITORY_NGINX: nginx
         ECR_REPOSITORY_APP: app
-        IMAGE_TAG: ${{ github.sha }}
+        # IMAGE_TAG: ${{ github.sha }}
+        IMAGE_TAG: latest
       run: |
           echo $ECR $ECR_REGISTRY/$ECR_REPOSITORY_NGINX:$IMAGE_TAG
           ls -la
@@ -77,8 +78,7 @@ jobs:
     - name: rewrite task-definition
       run: sed -i -e s/SED_APP_NAME/${{ env.APP_NAME }}/g .aws/task-definition.json &&
           sed -i -e s/SED_AWS_ACCOUNT_ID/${{ secrets.AWS_ACCOUNT_ID }}/g .aws/task-definition.json &&
-          sed -i -e s/SED_REGION/${{ env.AWS_DEFAULT_REGION }}/g .aws/task-definition.json &&
-          echo ${{secrets.AWS_ACCOUNT_ID}}
+          sed -i -e s/SED_REGION/${{ env.AWS_DEFAULT_REGION }}/g .aws/task-definition.json
       # # Migration
       # - name: migration task def
       #   id: migration-task-def
@@ -95,16 +95,16 @@ jobs:
         task-definition: .aws/task-definition.json          
         container-name: nginx
          # Repository名はプロジェクトごとで一意にしておく
-        image: ${{ secrets.AWS_ACCOUNT_ID}}.dkr.${{env.AWS_DEFAULT_REGION}}.amazonaws.com/nginx:latest
+        image: ${{ secrets.AWS_ACCOUNT_ID}}.dkr.${{env.AWS_DEFAULT_REGION}}.amazonaws.com/nginx:$IMAGE_TAG
 
-    - name: Modify Amazon ECS task definition with second container
+    - name: Modify Amazon ECS task definition with APP container
       id: render-app-container
       uses: aws-actions/amazon-ecs-render-task-definition@v1
       with:
         task-definition: ${{ steps.render-nginx-container.outputs.task-definition }}
         container-name: app
         # Repository名はプロジェクトごとで一意にしておく
-        image: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{env.AWS_DEFAULT_REGION}}.amazonaws.com/app:latest
+        image: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{env.AWS_DEFAULT_REGION}}.amazonaws.com/app:$IMAGE_TAG
 
     - name: Deploy Amazon ECS task definition
       uses: aws-actions/amazon-ecs-deploy-task-definition@v1
