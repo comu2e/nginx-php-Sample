@@ -32,7 +32,6 @@ on:
       - master
 env:
   APP_NAME: FargateDemo
-  REGION:   ap-northeast-1
 jobs:
   deploy:
     name: Deploy
@@ -47,7 +46,6 @@ jobs:
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{env.REGION}}
       env:
         APP_NAME : "SAMPLE_app"      
     - name: Login to Amazon ECR
@@ -77,7 +75,9 @@ jobs:
     - name: rewrite task-definition
       run: sed -i -e s/SED_APP_NAME/${{ env.APP_NAME }}/g .aws/task-definition.json &&
           sed -i -e s/SED_AWS_ACCOUNT_ID/${{ secrets.AWS_ACCOUNT_ID }}/g .aws/task-definition.json &&
-          sed -i -e s/SED_REGION/${{ env.REGION }}/g .aws/task-definition.json
+          sed -i -e s/SED_REGION/${{ env.AWS_DEFAULT_REGION }}/g .aws/task-definition.json &&
+          echo ${{secrets.AWS_ACCOUNT_ID}}
+
       # # Migration
       # - name: migration task def
       #   id: migration-task-def
@@ -94,7 +94,7 @@ jobs:
         task-definition: .aws/task-definition.json          
         container-name: nginx
          # Repository名はプロジェクトごとで一意にしておく
-        image: ${{ secrets.AWS_ACCOUNT_ID}}.dkr.${{env.REGION}}.amazonaws.com/nginx:latest
+        image: ${{ secrets.AWS_ACCOUNT_ID}}.dkr.${{env.AWS_DEFAULT_REGION}}.amazonaws.com/nginx:latest
 
     - name: Modify Amazon ECS task definition with second container
       id: render-app-container
@@ -103,7 +103,7 @@ jobs:
         task-definition: ${{ steps.render-nginx-container.outputs.task-definition }}
         container-name: app
         # Repository名はプロジェクトごとで一意にしておく
-        image: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{env.REGION}}.amazonaws.com/app:latest
+        image: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{env.AWS_DEFAULT_REGION}}.amazonaws.com/app:latest
 
     - name: Deploy Amazon ECS task definition
       uses: aws-actions/amazon-ecs-deploy-task-definition@v1
