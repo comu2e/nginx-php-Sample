@@ -64,11 +64,11 @@ jobs:
         IMAGE_TAG: ${{ github.sha }}
       run: |
           echo $ECR $ECR_REGISTRY/$ECR_REPOSITORY_NGINX:$IMAGE_TAG
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY_NGINX:$IMAGE_TAG -f .docker/nginx/Dockerfile .
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY_NGINX:$IMAGE_TAG -f .docker/nginx/Dockerfile ./docker/
           docker push $ECR_REGISTRY/$ECR_REPOSITORY_NGINX:$IMAGE_TAG
           echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY_NGINX:$IMAGE_TAG"
 
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY_APP:$IMAGE_TAG -f .docker/app/Dockerfile .
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY_APP:$IMAGE_TAG -f .docker/app/Dockerfile ./docker/
           docker push $ECR_REGISTRY/$ECR_REPOSITORY_APP:$IMAGE_TAG
           echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY_APP:$IMAGE_TAG"
 
