@@ -34,6 +34,7 @@ env:
 # アプリケーションとAWS上の環境の名前はAPP_NAMEで共有しているのでここは揃える。
   APP_NAME: FargateDemo
   REGION:   ap-northeast-1
+  IMAGE_TAG:  ${{ github.sha }}
 jobs:
   deploy:
     name: Deploy
@@ -49,8 +50,6 @@ jobs:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ${{env.REGION}}
-      env:
-        APP_NAME : "SAMPLE_app"      
     - name: Login to Amazon ECR
       id: login-ecr
       uses: aws-actions/amazon-ecr-login@v1
@@ -62,25 +61,24 @@ jobs:
         # プロジェクトごとに分けておいたほうがいい
         ECR_REPOSITORY_NGINX: nginx
         ECR_REPOSITORY_APP: app
-        IMAGE_TAG: ${{ github.sha }}
-        # IMAGE_TAG: latest
-      run: |
-          echo $ECR $ECR_REGISTRY/$ECR_REPOSITORY_NGINX:$IMAGE_TAG
-          ls -la
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY_NGINX:$IMAGE_TAG -f .docker/nginx/Dockerfile .docker/nginx
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY_NGINX:$IMAGE_TAG
-          echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY_NGINX:$IMAGE_TAG"
 
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY_APP:$IMAGE_TAG -f .docker/app/Dockerfile .docker/app
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY_APP:$IMAGE_TAG
-          echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY_APP:$IMAGE_TAG"
+      run: |
+          echo $ECR $ECR_REGISTRY/$ECR_REPOSITORY_NGINX:${{env.IMAGE_TAG}}
+          ls -la
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY_NGINX:${{env.IMAGE_TAG}} -f .docker/nginx/Dockerfile .docker/nginx
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY_NGINX:${{env.IMAGE_TAG}}
+          echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY_NGINX:${{env.IMAGE_TAG}}
+
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY_APP:${{env.IMAGE_TAG}}-f .docker/app/Dockerfile .docker/app
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY_APP:${{env.IMAGE_TAG}}
+          echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY_APP:${{env.IMAGE_TAG}}"
 
     # Rewrite task-definition
     - name: rewrite task-definition
       run: sed -i -e s/SED_APP_NAME/${{ env.APP_NAME }}/g .aws/task-definition.json &&
           sed -i -e s/SED_AWS_ACCOUNT_ID/${{ secrets.AWS_ACCOUNT_ID }}/g .aws/task-definition.json &&
           sed -i -e s/SED_REGION/${{ env.AWS_DEFAULT_REGION }}/g .aws/task-definition.json &&
-          sed -i -e s/SED_IMAGE_TAG/${{steps.build-image.outputs.IMAGE_TAG}}/g .aws/task-definition.json
+          sed -i -e s/SED_IMAGE_TAG/${{env.IMAGE_TAG}}/g .aws/task-definition.json
       # # Migration
       # - name: migration task def
       #   id: migration-task-def
@@ -97,7 +95,7 @@ jobs:
         task-definition: .aws/task-definition.json          
         container-name: nginx
          # Repository名はプロジェクトごとで一意にしておく
-        image: ${{ secrets.AWS_ACCOUNT_ID}}.dkr.${{env.AWS_DEFAULT_REGION}}.amazonaws.com/nginx:${{steps.build-image.outputs.IMAGE_TAG}}
+        image: ${{ secrets.AWS_ACCOUNT_ID}}.dkr.${{env.AWS_DEFAULT_REGION}}.amazonaws.com/nginx:${{env.IMAGE_TAG}}
 
     - name: Render Amazon ECS task definition with APP container
       id: render-app-container
@@ -106,7 +104,7 @@ jobs:
         task-definition: ${{ steps.render-nginx-container.outputs.task-definition }}
         container-name: app
         # Repository名はプロジェクトごとで一意にしておく
-        image: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{env.AWS_DEFAULT_REGION}}.amazonaws.com/app:${{steps.build-image.outputs.IMAGE_TAG}}
+        image: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{env.AWS_DEFAULT_REGION}}.amazonaws.com/app:${{env.IMAGE_TAG}}
 
     - name: Deploy Amazon ECS task definition
       uses: aws-actions/amazon-ecs-deploy-task-definition@v1
