@@ -58,7 +58,7 @@ jobs:
       id: build-image
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        ECR_REPOSITORY_NGINX: ${{env.APP_NAME}-nginx
+        ECR_REPOSITORY_NGINX: ${{env.APP_NAME}}-nginx
         ECR_REPOSITORY_APP: ${{env.APP_NAME}}-app
         IMAGE_TAG: ${{ github.sha }}
       run: |
