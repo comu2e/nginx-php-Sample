@@ -86,7 +86,6 @@ jobs:
       #   with:
       #     task-definition: .aws/ecs/migration-task-definition.json
       #     cluster: ${{env.APP_NAME}}
-
       # Deploy
     - name: Render Amazon ECS task definition for Nginx container
       id: render-nginx-container
